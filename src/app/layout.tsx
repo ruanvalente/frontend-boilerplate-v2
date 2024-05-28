@@ -20,7 +20,11 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className={`${karla.className} bg-gray-100 flex`}>
         <Sidebar />
-        <Header />
+        <Header>
+          <div className="w-full overflow-x-hidden border-t flex flex-col">
+            <main className="w-full flex-grow p-6">{children}</main>
+          </div>
+        </Header>
       </body>
     </html>
   );

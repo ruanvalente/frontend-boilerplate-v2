@@ -1,6 +1,10 @@
 import Image from "next/image";
 
-export function Header() {
+export function Header({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <div className="w-full flex flex-col h-screen overflow-y-hidden">
       <header className="w-full items-center bg-slate-900 py-2 px-6 hidden sm:flex">
@@ -46,6 +50,7 @@ export function Header() {
           </div>
         </div>
       </header>
+      {children}
     </div>
   );
 }
