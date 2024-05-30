@@ -5,6 +5,7 @@ import { Header } from './ui/components/header';
 
 import './globals.css';
 import './themes/primereact';
+import 'leaflet/dist/leaflet.css';
 
 const karla = Karla({ subsets: ['latin'] });
 
