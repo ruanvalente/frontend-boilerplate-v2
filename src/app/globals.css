@@ -14,3 +14,9 @@
     text-wrap: balance;
   }
 }
+
+/* Overwritten css Leaflet */
+
+div.leaflet-control-zoom.leaflet-bar.leaflet-control {
+  margin-top: 6rem;
+}

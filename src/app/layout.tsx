@@ -25,7 +25,7 @@ export default function RootLayout({
         <Sidebar />
         <Header>
           <div className="w-full min-h-screen border-t flex flex-col">
-            <main className="w-full flex-grow p-6">{children}</main>
+            <main className="w-full flex-grow p-6 relative">{children}</main>
           </div>
         </Header>
       </body>
