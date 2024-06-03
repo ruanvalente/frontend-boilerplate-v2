@@ -21,7 +21,7 @@ import { InputText } from 'primereact/inputtext';
 import { BiMapPin } from 'react-icons/bi';
 import ReactDOMServer from 'react-dom/server';
 
-export default function MapPage() {
+export default function MapDropPage() {
   const initialPosition: LatLngExpression = [-22.9426727, -43.2489744];
   const [markerPosition, setMarkerPosition] =
     useState<LatLngTuple>(initialPosition);
@@ -108,25 +108,24 @@ export default function MapPage() {
         if (draggableMarkerRef.current) {
           const marker = draggableMarkerRef.current;
           const position = marker.getLatLng();
-          setMarkerPosition([...markerPosition, [position.lat, position.lng]]); // Adiciona a nova posição ao array
+          console.log('position', position);
+          setMarkerPosition((prevMarkers) => [position.lat, position.lng]);
         }
       }
     });
 
-    if (markerPosition) {
-      return (
-        <Marker
-          position={markerPosition}
-          draggable={true}
-          ref={draggableMarkerRef}
-          icon={svgIcon}
-        >
-          <Popup>
-            Latitude: {markerPosition[0]}, Longitude: {markerPosition[1]}
-          </Popup>
-        </Marker>
-      );
-    }
+    return (
+      <Marker
+        position={markerPosition}
+        draggable={true}
+        ref={draggableMarkerRef}
+        icon={svgIcon}
+      >
+        <Popup>
+          Latitude: {markerPosition[0]}, Longitude: {markerPosition[1]}
+        </Popup>
+      </Marker>
+    );
   }
 
   const handleBoxDragStart = (event: React.DragEvent) => {
@@ -140,14 +139,9 @@ export default function MapPage() {
       const mapX = event.clientX - mapRect.left;
       const mapY = event.clientY - mapRect.top;
 
-      const map = draggableMarkerRef.current?._map as Map;
+      const map = draggableMarkerRef.current?._map as any;
       const latLng = map.containerPointToLatLng([mapX, mapY]);
-      if (!isNaN(latLng.lat) && !isNaN(latLng.lng)) {
-        setMarkerPosition((prevMarkers) => [
-          ...prevMarkers,
-          [latLng.lat, latLng.lng]
-        ]);
-      }
+      setMarkerPosition((prevMaker) => [latLng.lat, latLng.lng]);
     }
   };
 
@@ -164,7 +158,6 @@ export default function MapPage() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {/* Renderiza os polígonos */}
         <Polygon pathOptions={tijucaOptions} positions={tijuca}>
           <Popup>Tijuca</Popup>
         </Polygon>
@@ -182,25 +175,6 @@ export default function MapPage() {
         </Polygon>
         <Marker position={ipanemaCenter} icon={svgIcon}>
           <Popup>Centro de Ipanema</Popup>
-        </Marker>
-        {/* Renderiza os marcadores */}
-        {markerPosition.map((position, index) => (
-          <Marker key={index} position={position} icon={svgIcon}>
-            <Popup>
-              Latitude: {position[0]}, Longitude: {position[1]}
-            </Popup>
-          </Marker>
-        ))}
-        {/* Marcador arrastável */}
-        <Marker
-          position={initialPosition}
-          draggable={true}
-          ref={draggableMarkerRef}
-          icon={svgIcon}
-        >
-          <Popup>
-            Latitude: {initialPosition[0]}, Longitude: {initialPosition[1]}
-          </Popup>
         </Marker>
         <DraggableMarker />
       </MapContainer>

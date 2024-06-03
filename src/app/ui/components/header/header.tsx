@@ -10,7 +10,6 @@ export function Header({ children }: Readonly<{ children: React.ReactNode }>) {
   const { profile, username } = useSessionStore();
 
   const [isOpen, setIsOpen] = useState(false);
-
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
