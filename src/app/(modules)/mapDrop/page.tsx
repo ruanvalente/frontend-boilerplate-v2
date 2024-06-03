@@ -14,7 +14,8 @@ import {
   Polygon,
   Popup,
   Marker,
-  useMapEvents
+  useMapEvents,
+  useMap
 } from 'react-leaflet';
 import { InputText } from 'primereact/inputtext';
 
@@ -23,9 +24,8 @@ import ReactDOMServer from 'react-dom/server';
 
 export default function MapDropPage() {
   const initialPosition: LatLngExpression = [-22.9426727, -43.2489744];
-  const [markerPosition, setMarkerPosition] =
-    useState<LatLngTuple>(initialPosition);
-  const draggableMarkerRef = useRef<LMarker | null>(null);
+  const [markers, setMarkers] = useState<LatLngTuple[]>([]);
+  const mapRef = useRef<Map | null>(null);
 
   const tijuca: LatLngExpression[] = [
     [-22.912205, -43.239071],
@@ -101,49 +101,28 @@ export default function MapDropPage() {
     iconSize: [24, 24]
   });
 
-  function DraggableMarker() {
-    useMapEvents({
-      click() {},
-      dragend() {
-        if (draggableMarkerRef.current) {
-          const marker = draggableMarkerRef.current;
-          const position = marker.getLatLng();
-          console.log('position', position);
-          setMarkerPosition((prevMarkers) => [position.lat, position.lng]);
-        }
-      }
-    });
-
-    return (
-      <Marker
-        position={markerPosition}
-        draggable={true}
-        ref={draggableMarkerRef}
-        icon={svgIcon}
-      >
-        <Popup>
-          Latitude: {markerPosition[0]}, Longitude: {markerPosition[1]}
-        </Popup>
-      </Marker>
-    );
-  }
-
   const handleBoxDragStart = (event: React.DragEvent) => {
     event.dataTransfer.setData('text/plain', '');
   };
 
   const handleBoxDragEnd = (event: React.DragEvent) => {
-    const mapElement = document.querySelector('.leaflet-container');
-    if (mapElement) {
-      const mapRect = mapElement.getBoundingClientRect();
-      const mapX = event.clientX - mapRect.left;
-      const mapY = event.clientY - mapRect.top;
+    if (!mapRef.current) return;
 
-      const map = draggableMarkerRef.current?._map as any;
-      const latLng = map.containerPointToLatLng([mapX, mapY]);
-      setMarkerPosition((prevMaker) => [latLng.lat, latLng.lng]);
-    }
+    const map = mapRef.current;
+    const mapElement = map.getContainer();
+    const mapRect = mapElement.getBoundingClientRect();
+    const mapX = event.clientX - mapRect.left;
+    const mapY = event.clientY - mapRect.top;
+
+    const latLng = map.containerPointToLatLng([mapX, mapY]);
+    setMarkers((prevMarkers) => [...prevMarkers, [latLng.lat, latLng.lng]]);
   };
+
+  function MapWrapper({ children }: { children: React.ReactNode }) {
+    const map = useMap();
+    mapRef.current = map;
+    return <>{children}</>;
+  }
 
   return (
     <>
@@ -154,29 +133,37 @@ export default function MapDropPage() {
         style={{ width: '100%', height: '100%' }}
         className="z-0 w-full"
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Polygon pathOptions={tijucaOptions} positions={tijuca}>
-          <Popup>Tijuca</Popup>
-        </Polygon>
-        <Marker position={tijucaCenter} icon={svgIcon}>
-          <Popup>Centro da Tijuca</Popup>
-        </Marker>
-        <Polygon pathOptions={copacabanaOptions} positions={copacabana}>
-          <Popup>Copacabana</Popup>
-        </Polygon>
-        <Marker position={copacabanaCenter} icon={svgIcon}>
-          <Popup>Centro de Copacabana</Popup>
-        </Marker>
-        <Polygon pathOptions={ipanemaOptions} positions={ipanema}>
-          <Popup>Ipanema</Popup>
-        </Polygon>
-        <Marker position={ipanemaCenter} icon={svgIcon}>
-          <Popup>Centro de Ipanema</Popup>
-        </Marker>
-        <DraggableMarker />
+        <MapWrapper>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <Polygon pathOptions={tijucaOptions} positions={tijuca}>
+            <Popup>Tijuca</Popup>
+          </Polygon>
+          <Marker position={tijucaCenter} icon={svgIcon}>
+            <Popup>Centro da Tijuca</Popup>
+          </Marker>
+          <Polygon pathOptions={copacabanaOptions} positions={copacabana}>
+            <Popup>Copacabana</Popup>
+          </Polygon>
+          <Marker position={copacabanaCenter} icon={svgIcon}>
+            <Popup>Centro de Copacabana</Popup>
+          </Marker>
+          <Polygon pathOptions={ipanemaOptions} positions={ipanema}>
+            <Popup>Ipanema</Popup>
+          </Polygon>
+          <Marker position={ipanemaCenter} icon={svgIcon}>
+            <Popup>Centro de Ipanema</Popup>
+          </Marker>
+          {markers.map((position, idx) => (
+            <Marker key={idx} position={position} icon={svgIcon}>
+              <Popup>
+                Latitude: {position[0]}, Longitude: {position[1]}
+              </Popup>
+            </Marker>
+          ))}
+        </MapWrapper>
       </MapContainer>
       <div className="absolute top-6 right-6 z-10 bg-white p-4 flex items-center justify-center w-32 h-32">
         <div
@@ -192,13 +179,17 @@ export default function MapDropPage() {
         <InputText
           className="relative w-80"
           placeholder="Latitude"
-          value={markerPosition[0].toString()}
+          value={
+            markers.length ? markers[markers.length - 1][0].toString() : ''
+          }
           readOnly
         />
         <InputText
           className="relative w-80"
           placeholder="Longitude"
-          value={markerPosition[1].toString()}
+          value={
+            markers.length ? markers[markers.length - 1][1].toString() : ''
+          }
           readOnly
         />
       </div>
