@@ -1,31 +1,19 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import {
-  LatLngExpression,
-  LatLngTuple,
-  Map,
-  Marker as LMarker,
-  divIcon
-} from 'leaflet';
-import {
-  MapContainer,
-  TileLayer,
-  Polygon,
-  Popup,
-  Marker,
-  useMapEvents
-} from 'react-leaflet';
+import { useState } from 'react';
+import { LatLngExpression, LatLngTuple, divIcon } from 'leaflet';
+import { MapContainer, TileLayer, Polygon, Popup, Marker } from 'react-leaflet';
 import { InputText } from 'primereact/inputtext';
 
 import { BiMapPin } from 'react-icons/bi';
 import ReactDOMServer from 'react-dom/server';
 
 export default function MapPage() {
-  const initialPosition: LatLngExpression = [-22.9426727, -43.2489744];
-  const [markerPosition, setMarkerPosition] =
-    useState<LatLngTuple>(initialPosition);
-  const draggableMarkerRef = useRef<LMarker | null>(null);
+  const position: LatLngExpression = [-22.9426727, -43.2489744];
+  const [markerPosition, setMarkerPosition] = useState<LatLngTuple>([
+    -22.9426727, -43.2489744
+  ]);
+  const [boxPosition, setBoxPosition] = useState({ x: 0, y: 0 });
 
   const tijuca: LatLngExpression[] = [
     [-22.912205, -43.239071],
@@ -101,60 +89,10 @@ export default function MapPage() {
     iconSize: [24, 24]
   });
 
-  function DraggableMarker() {
-    useMapEvents({
-      click() {},
-      dragend() {
-        if (draggableMarkerRef.current) {
-          const marker = draggableMarkerRef.current;
-          const position = marker.getLatLng();
-          setMarkerPosition([...markerPosition, [position.lat, position.lng]]); // Adiciona a nova posição ao array
-        }
-      }
-    });
-
-    if (markerPosition) {
-      return (
-        <Marker
-          position={markerPosition}
-          draggable={true}
-          ref={draggableMarkerRef}
-          icon={svgIcon}
-        >
-          <Popup>
-            Latitude: {markerPosition[0]}, Longitude: {markerPosition[1]}
-          </Popup>
-        </Marker>
-      );
-    }
-  }
-
-  const handleBoxDragStart = (event: React.DragEvent) => {
-    event.dataTransfer.setData('text/plain', '');
-  };
-
-  const handleBoxDragEnd = (event: React.DragEvent) => {
-    const mapElement = document.querySelector('.leaflet-container');
-    if (mapElement) {
-      const mapRect = mapElement.getBoundingClientRect();
-      const mapX = event.clientX - mapRect.left;
-      const mapY = event.clientY - mapRect.top;
-
-      const map = draggableMarkerRef.current?._map as Map;
-      const latLng = map.containerPointToLatLng([mapX, mapY]);
-      if (!isNaN(latLng.lat) && !isNaN(latLng.lng)) {
-        setMarkerPosition((prevMarkers) => [
-          ...prevMarkers,
-          [latLng.lat, latLng.lng]
-        ]);
-      }
-    }
-  };
-
   return (
     <>
       <MapContainer
-        center={initialPosition}
+        center={position}
         zoom={13}
         scrollWheelZoom={false}
         style={{ width: '100%', height: '100%' }}
@@ -164,7 +102,6 @@ export default function MapPage() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {/* Renderiza os polígonos */}
         <Polygon pathOptions={tijucaOptions} positions={tijuca}>
           <Popup>Tijuca</Popup>
         </Polygon>
@@ -183,50 +120,40 @@ export default function MapPage() {
         <Marker position={ipanemaCenter} icon={svgIcon}>
           <Popup>Centro de Ipanema</Popup>
         </Marker>
-        {/* Renderiza os marcadores */}
-        {markerPosition.map((position, index) => (
-          <Marker key={index} position={position} icon={svgIcon}>
-            <Popup>
-              Latitude: {position[0]}, Longitude: {position[1]}
-            </Popup>
-          </Marker>
-        ))}
-        {/* Marcador arrastável */}
         <Marker
-          position={initialPosition}
+          position={markerPosition}
           draggable={true}
-          ref={draggableMarkerRef}
+          eventHandlers={{
+            dragend: (event) => {
+              const marker = event.target;
+              const position = marker.getLatLng();
+              setMarkerPosition([position.lat, position.lng]);
+            }
+          }}
           icon={svgIcon}
         >
           <Popup>
-            Latitude: {initialPosition[0]}, Longitude: {initialPosition[1]}
+            Latitude: {markerPosition[0]}, Longitude: {markerPosition[1]}
           </Popup>
         </Marker>
-        <DraggableMarker />
       </MapContainer>
-      <div className="absolute top-6 right-6 z-10 bg-white p-4 flex items-center justify-center w-32 h-32">
-        <div
-          draggable={true}
-          onDragStart={handleBoxDragStart}
-          onDragEnd={handleBoxDragEnd}
-          style={{ cursor: 'move', width: '24px', height: '24px' }}
-        >
-          <BiMapPin size={24} />
+      <div className="absolute top-6 z-10">
+        <div className="flex justify-between">
+          <div>
+            <InputText
+              className="relative w-80"
+              placeholder="Latitude"
+              value={markerPosition[0].toString()}
+              readOnly
+            />
+            <InputText
+              className="relative w-80"
+              placeholder="Longitude"
+              value={markerPosition[1].toString()}
+              readOnly
+            />
+          </div>
         </div>
-      </div>
-      <div className="absolute top-6 left-6 z-10">
-        <InputText
-          className="relative w-80"
-          placeholder="Latitude"
-          value={markerPosition[0].toString()}
-          readOnly
-        />
-        <InputText
-          className="relative w-80"
-          placeholder="Longitude"
-          value={markerPosition[1].toString()}
-          readOnly
-        />
       </div>
     </>
   );
